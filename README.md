@@ -1,5 +1,7 @@
 # Your CBT Friend
 
+Make your Claude able to respond with CBT techniques to help out with day to day struggles.
+
 A skill for Claude that changes how it responds to someone who is struggling: instead of a
 generic sympathetic reply, it answers the way the best peer supporters in Reddit mental-health
 communities do, informed by cognitive behavioral therapy (CBT). Validate something specific
