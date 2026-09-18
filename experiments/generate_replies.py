@@ -34,8 +34,8 @@ BARE_SYSTEM = ("You are a member of a Reddit mental-health support community rep
 def load_env():
     p = os.path.join(ROOT, ".env")
     if os.path.exists(p):
-        for line in open(p, encoding="utf-8"):
-            line = line.strip()
+        for line in open(p, encoding="utf-8-sig"):          # utf-8-sig: tolerate a BOM from Notepad / PowerShell
+            line = line.strip().lstrip("﻿")
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
