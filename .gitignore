@@ -1,6 +1,9 @@
 # secrets
 .env
 
+# the team's annotation codebook (kept out of the public repo until the team decides to publish it)
+experiments/codebook/
+
 # raw Reddit text and model outputs (never published)
 experiments/data/
 experiments/runs/*/replies.jsonl
