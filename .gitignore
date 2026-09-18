@@ -1,0 +1,13 @@
+# secrets
+.env
+
+# raw Reddit text and model outputs (never published)
+experiments/data/
+experiments/runs/*/replies.jsonl
+experiments/runs/*/annotations.jsonl
+experiments/runs/*/side_by_side.md
+experiments/runs/*/review/
+
+# python
+__pycache__/
+*.pyc
