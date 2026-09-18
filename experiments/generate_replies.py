@@ -86,8 +86,8 @@ def main():
     ap.add_argument("--max-tokens", type=int, default=4000)
     args = ap.parse_args()
     load_env()
-    if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
-        raise SystemExit("No API credentials: set ANTHROPIC_API_KEY (or put ANTHROPIC_API_KEY=... in %s)" % os.path.join(ROOT, ".env"))
+    # Credentials are resolved by the SDK: ANTHROPIC_API_KEY (env or .env), ANTHROPIC_AUTH_TOKEN, an
+    # `ant auth login` profile, or Workload Identity Federation env vars. Nothing is required here.
     client = anthropic.Anthropic(max_retries=6)
     posts = [json.loads(l) for l in open(os.path.join(DATA, "testset.jsonl"), encoding="utf-8")]
     if args.posts:
