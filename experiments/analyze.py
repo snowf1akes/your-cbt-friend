@@ -63,9 +63,17 @@ def main():
     if gold:
         sources.append("human_gold")
 
+    def raw_text(pid, s):
+        if s in ("human", "human_gold"):
+            return posts[pid]["human_reply"]
+        return replies.get((pid, s), {}).get("text", "")
+
     stats, profiles = {}, {}
     for s in sources:
         recs = [r for (pid, src), r in ann.items() if src == s]
+        texts = [raw_text(r["post_id"], s) for r in recs]
+        em_dashes = sum(t.count("—") for t in texts) / max(1, len(texts))
+        markdown = sum(1 for t in texts if re.search(r"\*\*|^\s*(?:[-*•]|\d+[.)])\s+|^#{1,3}\s", t, re.M)) / max(1, len(texts)) * 100.0
         n_sent = sum(len(r["sentences"]) for r in recs)
         n_words = sum(len(" ".join(r["sentences"]).split()) for r in recs)
         cnt = Counter(l for r in recs for labs in r["labels"] for l in labs)
@@ -84,6 +92,7 @@ def main():
                         pct_referral_on_risk_posts=(100.0 * risk_ref / len(risk_ids)) if risk_ids else float("nan"), n_risk_posts=len(risk_ids),
                         pct_self_disclosure=100.0 * has["Self-Disclosure"] / max(1, len(recs)),
                         harmful_instances=sum(cnt[h] for h in HARMFUL), pct_replies_with_harmful=100.0 * sum(1 for r in recs if any(h in labs for labs in r["labels"] for h in HARMFUL)) / max(1, len(recs)),
+                        em_dashes_per_reply=em_dashes, pct_markdown=markdown,
                         n_sentences=n_sent, counts=dict(cnt), replies_with=dict(has))
         profiles[s] = {l: 100.0 * cnt[l] / max(1, n_sent) for l in LABEL_NAMES}
 
@@ -96,7 +105,8 @@ def main():
             md_table([stats[s] for s in sources], ["source", "n_replies", "words_per_reply", "sentences_per_reply", "labels_per_reply", "pct_sentences_labeled",
                                                    "pct_ends_with_question", "pct_validation", "pct_summarizing", "pct_restructuring", "pct_recommendation",
                                                    "recommendations_per_reply", "pct_clinical_referral", "pct_referral_on_risk_posts", "n_risk_posts",
-                                                   "pct_self_disclosure", "harmful_instances", "pct_replies_with_harmful"]), ""]
+                                                   "pct_self_disclosure", "harmful_instances", "pct_replies_with_harmful", "em_dashes_per_reply", "pct_markdown"]),
+            "", "em_dashes_per_reply and pct_markdown (bold, bullets, headings) are style signals: human Reddit replies rarely have either.", ""]
     rows = []
     for l in LABEL_NAMES:
         row = {"label": l}
@@ -108,9 +118,14 @@ def main():
     rep += ["## 2. Technique profile: label instances per 100 sentences, and % of replies containing the label", "",
             md_table(rows, ["label"] + [s + " per100" for s in sources] + [s + " %replies" for s in sources]), ""]
     if "human" in sources:
-        rep += ["## 3. Distance of each condition's label distribution from the human replies (Jensen-Shannon divergence, bits; 0 = identical)", ""]
-        rep += [md_table([{"source": s, "JS divergence vs human (same annotator)": js_divergence(stats[s]["counts"], stats["human"]["counts"])} for s in sources if s != "human"],
-                         ["source", "JS divergence vs human (same annotator)"]), ""]
+        rep += ["## 3. Distance of each condition's label distribution from the human replies (Jensen-Shannon divergence, bits; 0 = identical)", "",
+                "The second column drops Self-Disclosure before comparing: humans anchor replies in their own experience, which the "
+                "skill forbids the model to fabricate, so that label should not count against it.", ""]
+        no_sd = lambda c: {k: v for k, v in c.items() if k != "Self-Disclosure"}
+        rep += [md_table([{"source": s, "JS divergence vs human": js_divergence(stats[s]["counts"], stats["human"]["counts"]),
+                           "JS divergence vs human, excluding Self-Disclosure": js_divergence(no_sd(stats[s]["counts"]), no_sd(stats["human"]["counts"]))}
+                          for s in sources if s != "human"],
+                         ["source", "JS divergence vs human", "JS divergence vs human, excluding Self-Disclosure"]), ""]
     if "bare" in sources and "skill" in sources:
         pids = [pid for pid in posts if (pid, "bare") in ann and (pid, "skill") in ann]
         rows = []
