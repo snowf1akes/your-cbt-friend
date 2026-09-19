@@ -21,9 +21,19 @@ CORE = ["Validation", "Summarizing", "Restructuring", "Recommendation", "Clinica
 
 
 def md_table(rows, cols):
+    def fmt(c, v):
+        if isinstance(v, float):
+            if v != v:
+                return ""
+            if "divergence" in c.lower():
+                return "%.3f" % v
+            if "kappa" in c.lower() or "jaccard" in c.lower():
+                return "%.2f" % v
+            return "%.1f" % v
+        return str(v)
     out = ["| " + " | ".join(cols) + " |", "|" + "|".join("---" for _ in cols) + "|"]
     for r in rows:
-        out.append("| " + " | ".join(("%.1f" % v if isinstance(v, float) else str(v)) for v in (r.get(c, "") for c in cols)) + " |")
+        out.append("| " + " | ".join(fmt(c, r.get(c, "")) for c in cols) + " |")
     return "\n".join(out)
 
 
@@ -137,6 +147,28 @@ def main():
         rep += ["## 4. Paired comparison per post (same post, bare vs skill)", "", md_table(rows, ["label", "bare mean/reply", "skill mean/reply", "posts skill>bare", "posts skill<bare", "n_posts"]), ""]
     refusals = [(k, r) for k, r in replies.items() if r.get("stop_reason") == "refusal" or r.get("error")]
     rep += ["## 5. Refusals and errors", "", "%d of %d requests refused or errored." % (len(refusals), len(replies)), ""]
+    for (pid, c), r in refusals:
+        rep.append("- %s / %s: %s" % (pid, c, r.get("error") or "refusal"))
+    if "human" in sources and "human_gold" in sources:
+        pids = [pid for pid in posts if (pid, "human") in ann and (pid, "human_gold") in ann]
+        rows = []
+        for l in LABEL_NAMES:
+            m = [int(any(l in labs for labs in ann[(pid, "human")]["labels"])) for pid in pids]
+            g = [int(any(l in labs for labs in ann[(pid, "human_gold")]["labels"])) for pid in pids]
+            if sum(m) + sum(g) == 0:
+                continue
+            n = max(1, len(pids))
+            agree = sum(1 for a, b in zip(m, g) if a == b) / n
+            pm, pg = sum(m) / n, sum(g) / n
+            pe = pm * pg + (1 - pm) * (1 - pg)
+            rows.append({"label": l, "replies with label (model annotator)": sum(m), "replies with label (team)": sum(g),
+                         "pct agreement": 100.0 * agree, "kappa (reply level)": float("nan") if pe == 1 else (agree - pe) / (1 - pe)})
+        rows.sort(key=lambda r: -(r["replies with label (model annotator)"] + r["replies with label (team)"]))
+        rep += ["## 6. Annotator check: model labels versus the team's labels on the same human replies", "",
+                "Reply-level presence of each label (%d human replies). This bounds how far to trust differences between conditions: "
+                "a gap between bare and skill that is smaller than the annotator's own disagreement with the team is noise." % len(pids), "",
+                md_table(rows, ["label", "replies with label (model annotator)", "replies with label (team)", "pct agreement", "kappa (reply level)"]), ""]
+    refusals = []   # already reported above
     for (pid, c), r in refusals:
         rep.append("- %s / %s: %s" % (pid, c, r.get("error") or "refusal"))
     open(os.path.join(run_dir, "report.md"), "w", encoding="utf-8").write("\n".join(rep))
