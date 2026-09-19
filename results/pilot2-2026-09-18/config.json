@@ -1,0 +1,11 @@
+{
+ "model": "claude-opus-5",
+ "effort": "",
+ "conditions": [
+  "bare",
+  "skill"
+ ],
+ "bare_system": "You are a member of a Reddit mental-health support community replying to another member's post. Write your reply as a comment.",
+ "skill_chars": 38454,
+ "n_posts": 10
+}

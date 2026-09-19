@@ -4,12 +4,14 @@ Model: claude-opus-5, effort: default. Test posts: 53. Sources: bare = Claude wi
 
 ## 1. Reply shape and structural checks
 
-| source | n_replies | words_per_reply | sentences_per_reply | labels_per_reply | pct_sentences_labeled | pct_ends_with_question | pct_validation | pct_summarizing | pct_restructuring | pct_recommendation | recommendations_per_reply | pct_clinical_referral | pct_referral_on_risk_posts | n_risk_posts | pct_self_disclosure | harmful_instances | pct_replies_with_harmful |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| bare | 5 | 384.2 | 24.4 | 29.4 | 82.0 | 0.0 | 100.0 | 40.0 | 100.0 | 100.0 | 9.0 | 60.0 | nan | 0 | 80.0 | 0 | 0.0 |
-| skill | 5 | 244.2 | 9.8 | 15.2 | 93.9 | 100.0 | 100.0 | 60.0 | 80.0 | 100.0 | 3.6 | 100.0 | nan | 0 | 0.0 | 0 | 0.0 |
-| human | 5 | 47.6 | 3.4 | 5.4 | 94.1 | 0.0 | 40.0 | 0.0 | 0.0 | 80.0 | 1.6 | 20.0 | nan | 0 | 60.0 | 2 | 40.0 |
-| human_gold | 5 | 47.6 | 3.4 | 5.0 | 94.1 | 0.0 | 40.0 | 0.0 | 20.0 | 100.0 | 2.2 | 20.0 | nan | 0 | 60.0 | 0 | 0.0 |
+| source | n_replies | words_per_reply | sentences_per_reply | labels_per_reply | pct_sentences_labeled | pct_ends_with_question | pct_validation | pct_summarizing | pct_restructuring | pct_recommendation | recommendations_per_reply | pct_clinical_referral | pct_referral_on_risk_posts | n_risk_posts | pct_self_disclosure | harmful_instances | pct_replies_with_harmful | em_dashes_per_reply | pct_markdown |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| bare | 5 | 384.2 | 24.4 | 29.4 | 82.0 | 0.0 | 100.0 | 40.0 | 100.0 | 100.0 | 9.0 | 60.0 | nan | 0 | 80.0 | 0 | 0.0 | 4.6 | 100.0 |
+| skill | 5 | 244.2 | 9.8 | 15.2 | 93.9 | 100.0 | 100.0 | 60.0 | 80.0 | 100.0 | 3.6 | 100.0 | nan | 0 | 0.0 | 0 | 0.0 | 3.0 | 0.0 |
+| human | 5 | 47.6 | 3.4 | 5.4 | 94.1 | 0.0 | 40.0 | 0.0 | 0.0 | 80.0 | 1.6 | 20.0 | nan | 0 | 60.0 | 2 | 40.0 | 0.0 | 20.0 |
+| human_gold | 5 | 47.6 | 3.4 | 5.0 | 94.1 | 0.0 | 40.0 | 0.0 | 20.0 | 100.0 | 2.2 | 20.0 | nan | 0 | 60.0 | 0 | 0.0 | 0.0 | 20.0 |
+
+em_dashes_per_reply and pct_markdown (bold, bullets, headings) are style signals: human Reddit replies rarely have either.
 
 ## 2. Technique profile: label instances per 100 sentences, and % of replies containing the label
 
@@ -43,11 +45,13 @@ Model: claude-opus-5, effort: default. Test posts: 53. Sources: bare = Claude wi
 
 ## 3. Distance of each condition's label distribution from the human replies (Jensen-Shannon divergence, bits; 0 = identical)
 
-| source | JS divergence vs human (same annotator) |
-|---|---|
-| bare | 0.2 |
-| skill | 0.4 |
-| human_gold | 0.1 |
+The second column drops Self-Disclosure before comparing: humans anchor replies in their own experience, which the skill forbids the model to fabricate, so that label should not count against it.
+
+| source | JS divergence vs human | JS divergence vs human, excluding Self-Disclosure |
+|---|---|---|
+| bare | 0.2 | 0.3 |
+| skill | 0.4 | 0.3 |
+| human_gold | 0.1 | 0.2 |
 
 ## 4. Paired comparison per post (same post, bare vs skill)
 
